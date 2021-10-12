@@ -1,6 +1,6 @@
 import React from 'react';
-import logo from './logo.svg';
-import styles from './style/App.module.css';
+import logo from '../assets/logo.svg';
+import styles from '../style/App.module.css';
 
 function App(): JSX.Element {
   const buttonClick = async () => {
