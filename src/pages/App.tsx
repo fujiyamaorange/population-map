@@ -1,63 +1,153 @@
 import React from 'react';
-import logo from '../assets/logo.svg';
-import styles from '../style/App.module.css';
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts';
+
+import initialGraphData from '../constants/initialGraphData';
+import getPrefData from '../utils/api/getPrefData';
+import { PrefData } from '../models/prefecture';
+import { GraphData } from '../models/GraphData';
+import getAllPrefs from '../utils/api/getAllPrefs';
+import allPrefKanji from '../constants/allPrefKanji';
+import getRandomHexColor from '../utils/getRandomHexColor';
 
 function App(): JSX.Element {
-  const buttonClick = async () => {
-    console.log('ボタンを押しました');
+  const [prefectures, setPrefectures] = React.useState<PrefData[]>([]);
+  const [selected, setSelected] = React.useState<
+    { name: string; color: string }[]
+  >([]);
+  const [graphData, setGraphData] = React.useState<any>(initialGraphData);
 
-    const url = 'https://opendata.resas-portal.go.jp/api/v1/prefectures';
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': `${process.env.REACT_APP_API_KEY}`,
-      },
-    });
-    const data = await res.json();
-    console.table(res.status);
-    console.table(res.ok);
-    console.table(data.result);
+  const [buttonDisable, setButtonDisable] = React.useState<boolean>(false);
+
+  const getPrefectures = async () => {
+    setButtonDisable(true);
+    const data = await getAllPrefs();
+    if (data === 'error') {
+      // エラー処理
+      alert('都道府県一覧の取得に失敗しました');
+      setButtonDisable(false);
+      return;
+    }
+    setPrefectures(data.result as PrefData[]);
+    setButtonDisable(false);
   };
 
-  const getTokyo = async () => {
-    // fetchでデータを取得
-    // eslint-disable-next-line operator-linebreak
-    const url =
-      'https://opendata.resas-portal.go.jp/api/v1/population/composition/perYear?prefCode=13&cityCode=-';
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-API-KEY': `${process.env.REACT_APP_API_KEY}`,
-      },
+  const addGraphData = (data: GraphData[]) => {
+    const temp = graphData;
+    data.forEach((graph, index) => {
+      const pref = allPrefKanji[graph.pref.prefCode - 1];
+      temp[index].year = graph.year;
+      temp[index][pref] = graph.value;
     });
-    const data = await res.json();
-    console.table(res.status);
-    console.table(res.ok);
-    console.table(data);
+    setGraphData(temp);
+    setSelected([
+      ...selected,
+      {
+        name: allPrefKanji[data[0].pref.prefCode - 1],
+        color: getRandomHexColor(),
+      },
+    ]);
+  };
+
+  const checkPrefData = async (prefCode: number) => {
+    setButtonDisable(true);
+    if (selected.some((e) => e.name === allPrefKanji[prefCode - 1])) {
+      setSelected(
+        selected.filter((e) => e.name !== allPrefKanji[prefCode - 1]),
+      );
+      setButtonDisable(false);
+      return;
+    }
+
+    const data = await getPrefData(prefCode);
+    if (data === 'error') {
+      alert('都道府県情報の取得に失敗しました');
+      setButtonDisable(false);
+      return;
+    }
     // 総人口のデータ
-    console.table(data.result.data[0].data);
+    const population = data.result.data[0];
+    const giveData: GraphData[] = population.data.map(
+      (info: { year: number; value: number }) => ({
+        year: info.year,
+        value: info.value,
+        pref: prefectures[prefCode - 1],
+      }),
+    );
+    addGraphData(giveData);
+    setButtonDisable(false);
+    console.log(giveData);
+  };
+
+  const isClicked = (prefCode: number) => {
+    const result = selected.some((e) => e.name === allPrefKanji[prefCode - 1]);
+    return result;
   };
 
   return (
     <>
-      <div className={styles.App}>
-        <header className={styles.AppHeader}>
-          <img src={logo} className={styles.AppLogo} alt="logo" />
-          <a
-            className={styles.AppLink}
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div>
+        <main>
+          {prefectures.length === 0 && (
+            <button type="button" onClick={getPrefectures}>
+              都道府県情報を取得
+            </button>
+          )}
+
+          {prefectures.map((prefecture: PrefData) => (
+            <button
+              key={prefecture.prefCode}
+              type="button"
+              onClick={() => checkPrefData(prefecture.prefCode)}
+            >
+              <label htmlFor="scales">
+                <input
+                  type="checkbox"
+                  id="scales"
+                  name="scales"
+                  readOnly
+                  checked={isClicked(prefecture.prefCode)}
+                  disabled={buttonDisable}
+                />
+                {allPrefKanji[prefecture.prefCode - 1]}
+              </label>
+            </button>
+          ))}
+
+          <LineChart
+            width={730}
+            height={250}
+            data={graphData}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
           >
-            Learn React
-          </a>
-          <button type="button" onClick={buttonClick}>
-            都道府県情報を取得
-          </button>
-          <button type="button" onClick={getTokyo}>
-            東京都の人口情報を取得
-          </button>
-        </header>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="year" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            {selected.map((data) => (
+              <Line
+                key={data.name}
+                type="monotone"
+                dataKey={data.name}
+                stroke={data.color}
+              />
+            ))}
+          </LineChart>
+        </main>
       </div>
     </>
   );
