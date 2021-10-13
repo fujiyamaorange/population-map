@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  Label,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -158,8 +159,12 @@ function App(): JSX.Element {
               }}
             >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="year" />
-              <YAxis />
+              <XAxis dataKey="year">
+                <Label value="年" offset={0} position="insideBottomRight" />
+              </XAxis>
+              <YAxis>
+                <Label value="人口" offset={0} position="left" angle={-90} />
+              </YAxis>
               <Tooltip />
               <Legend />
               {selected.map((data) => (
