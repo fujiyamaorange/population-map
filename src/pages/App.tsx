@@ -11,7 +11,6 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-import initialGraphData from '../constants/initialGraphData';
 import getPrefData from '../utils/api/getPrefData';
 import { PrefData } from '../models/prefecture';
 import { GraphData } from '../models/GraphData';
@@ -28,15 +27,13 @@ function App(): JSX.Element {
   const [selected, setSelected] = React.useState<
     { name: string; color: string }[]
   >([]);
-  const [graphData, setGraphData] = React.useState<any>(initialGraphData);
-
+  const [graphData, setGraphData] = React.useState<Array<any>>([]);
   const [buttonDisable, setButtonDisable] = React.useState<boolean>(false);
 
   const getPrefectures = async () => {
     setButtonDisable(true);
     const data = await getAllPrefs();
     if (data === 'error') {
-      // エラー処理
       alert('都道府県一覧の取得に失敗しました');
       setButtonDisable(false);
       return;
@@ -45,8 +42,11 @@ function App(): JSX.Element {
     setButtonDisable(false);
   };
 
-  const addGraphData = (data: GraphData[]) => {
-    const temp = graphData;
+  const addGraphData = (data: GraphData[], initial: Array<any>) => {
+    let temp: Array<any> = [];
+    if (graphData.length === 0) temp = initial;
+    else temp = graphData;
+
     data.forEach((graph, index) => {
       const pref = allPrefKanji[graph.pref.prefCode - 1];
       temp[index].year = graph.year;
@@ -65,6 +65,7 @@ function App(): JSX.Element {
   const checkPrefData = async (prefCode: number) => {
     setButtonDisable(true);
     if (selected.some((e) => e.name === allPrefKanji[prefCode - 1])) {
+      // 削除
       setSelected(
         selected.filter((e) => e.name !== allPrefKanji[prefCode - 1]),
       );
@@ -78,8 +79,17 @@ function App(): JSX.Element {
       setButtonDisable(false);
       return;
     }
-    // 総人口のデータ
-    const population = data.result.data[0];
+
+    let initial = [];
+    const population = data.result.data[0]; // 総人口
+    if (graphData.length === 0) {
+      initial = population.data.map(
+        (info: { year: number; value: number }) => ({
+          year: info.year,
+        }),
+      );
+    }
+
     const giveData: GraphData[] = population.data.map(
       (info: { year: number; value: number }) => ({
         year: info.year,
@@ -87,9 +97,8 @@ function App(): JSX.Element {
         pref: prefectures[prefCode - 1],
       }),
     );
-    addGraphData(giveData);
+    addGraphData(giveData, initial);
     setButtonDisable(false);
-    console.log(giveData);
   };
 
   const isClicked = (prefCode: number) => {
@@ -99,78 +108,72 @@ function App(): JSX.Element {
 
   return (
     <>
-      <div>
-        <main>
-          <div>
-            <h1 className={generalStyles.titleText}>人口構成グラフ</h1>
+      <main>
+        <h1 className={generalStyles.titleText}>人口構成グラフ</h1>
+
+        {prefectures.length === 0 && (
+          <div className={generalStyles.prefectureButtonDiv}>
+            <button
+              className={generalStyles.prefectureButton}
+              type="button"
+              onClick={getPrefectures}
+            >
+              都道府県情報を取得
+            </button>
           </div>
+        )}
 
-          {prefectures.length === 0 && (
-            <div className={generalStyles.prefectureButtonDiv}>
-              <button
-                className={generalStyles.prefectureButton}
-                type="button"
-                onClick={getPrefectures}
-              >
-                都道府県情報を取得
-              </button>
-            </div>
-          )}
+        {prefectures.length > 0 && (
+          <h3 className={generalStyles.titleText}>
+            都道府県を選択してください
+          </h3>
+        )}
 
-          {prefectures.length > 0 && (
-            <h3 className={generalStyles.titleText}>
-              都道府県を選択してください
-            </h3>
-          )}
+        <div className={generalStyles.checkBoxDiv}>
+          {prefectures.map((prefecture: PrefData) => (
+            <CheckBox
+              type="button"
+              key={prefecture.prefCode}
+              id={prefecture.prefName}
+              className={classNames(
+                isClicked(prefecture.prefCode) && `${buttonStyles.checked}`,
+              )}
+              onClick={() => checkPrefData(prefecture.prefCode)}
+              disabled={buttonDisable}
+            >
+              {allPrefKanji[prefecture.prefCode - 1]}
+            </CheckBox>
+          ))}
+        </div>
 
-          <div className={generalStyles.checkBoxDiv}>
-            {prefectures.map((prefecture: PrefData) => (
-              <CheckBox
-                type="button"
-                key={prefecture.prefCode}
-                id={prefecture.prefName}
-                className={classNames(
-                  isClicked(prefecture.prefCode)
-                    ? `${buttonStyles.checked}`
-                    : '',
-                )}
-                onClick={() => checkPrefData(prefecture.prefCode)}
-                disabled={buttonDisable}
-              >
-                {allPrefKanji[prefecture.prefCode - 1]}
-              </CheckBox>
-            ))}
-          </div>
-
-          {prefectures.length > 0 && selected.length > 0 && (
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart
-                data={graphData}
-                margin={{
-                  top: 10,
-                  right: 40,
-                  left: 40,
-                  bottom: 40,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                {selected.map((data) => (
-                  <Line
-                    key={data.name}
-                    type="monotone"
-                    dataKey={data.name}
-                    stroke={data.color}
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </main>
-      </div>
+        {prefectures.length > 0 && selected.length > 0 && (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart
+              data={graphData}
+              margin={{
+                top: 10,
+                right: 40,
+                left: 40,
+                bottom: 40,
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="year" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              {selected.map((data) => (
+                <Line
+                  key={data.name}
+                  type="monotone"
+                  dataKey={data.name}
+                  stroke={data.color}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </main>
     </>
   );
 }
