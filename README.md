@@ -7,7 +7,7 @@
 2. `.env`ファイルに`REACT_APP_API_KEY=[API_KEY]`と追加する
 
 ## 使い方
-1. `git clone `
+1. `git clone https://github.com/FujimuraKaito/population-map.git`
 2. `cd population-map`
 3. `yarn install`
 4. `yarn start`
