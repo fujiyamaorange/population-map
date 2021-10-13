@@ -1,0 +1,30 @@
+.checkbutton {
+  background-color: rgba(255, 255, 255, 1);
+  border: solid 1px gray;
+  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+  width: 6.25rem;
+  max-width: 100px;
+  margin: 0.5rem 0 0 0.75rem;
+  cursor: pointer;
+}
+
+.checked {
+  background-color: rgba(220, 220, 220, 0.8);
+}
+
+@media screen and (max-width: 480px) {
+  .checkbutton {
+    background-color: rgba(255, 255, 255, 1);
+    border: solid 1px gray;
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    width: 6rem;
+    max-width: 100px;
+    margin: 0.5rem 0 0 0.75rem;
+    cursor: pointer;
+  }
+  .checked {
+    background-color: rgba(220, 220, 220, 0.8);
+  }
+}
