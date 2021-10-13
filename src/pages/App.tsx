@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ResponsiveContainer,
 } from 'recharts';
 
 import initialGraphData from '../constants/initialGraphData';
@@ -17,6 +18,10 @@ import { GraphData } from '../models/GraphData';
 import getAllPrefs from '../utils/api/getAllPrefs';
 import allPrefKanji from '../constants/allPrefKanji';
 import getRandomHexColor from '../utils/getRandomHexColor';
+import generalStyles from '../style/App.module.css';
+import buttonStyles from '../style/Button.module.css';
+import classNames from '../utils/classNames';
+import CheckBox from '../components/CheckBox';
 
 function App(): JSX.Element {
   const [prefectures, setPrefectures] = React.useState<PrefData[]>([]);
@@ -96,57 +101,74 @@ function App(): JSX.Element {
     <>
       <div>
         <main>
+          <div>
+            <h1 className={generalStyles.titleText}>人口構成グラフ</h1>
+          </div>
+
           {prefectures.length === 0 && (
-            <button type="button" onClick={getPrefectures}>
-              都道府県情報を取得
-            </button>
+            <div className={generalStyles.prefectureButtonDiv}>
+              <button
+                className={generalStyles.prefectureButton}
+                type="button"
+                onClick={getPrefectures}
+              >
+                都道府県情報を取得
+              </button>
+            </div>
           )}
 
-          {prefectures.map((prefecture: PrefData) => (
-            <button
-              key={prefecture.prefCode}
-              type="button"
-              onClick={() => checkPrefData(prefecture.prefCode)}
-            >
-              <label htmlFor="scales">
-                <input
-                  type="checkbox"
-                  id="scales"
-                  name="scales"
-                  readOnly
-                  checked={isClicked(prefecture.prefCode)}
-                  disabled={buttonDisable}
-                />
-                {allPrefKanji[prefecture.prefCode - 1]}
-              </label>
-            </button>
-          ))}
+          {prefectures.length > 0 && (
+            <h3 className={generalStyles.titleText}>
+              都道府県を選択してください
+            </h3>
+          )}
 
-          <LineChart
-            width={730}
-            height={250}
-            data={graphData}
-            margin={{
-              top: 5,
-              right: 30,
-              left: 20,
-              bottom: 5,
-            }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="year" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            {selected.map((data) => (
-              <Line
-                key={data.name}
-                type="monotone"
-                dataKey={data.name}
-                stroke={data.color}
-              />
+          <div className={generalStyles.checkBoxDiv}>
+            {prefectures.map((prefecture: PrefData) => (
+              <CheckBox
+                type="button"
+                key={prefecture.prefCode}
+                id={prefecture.prefName}
+                className={classNames(
+                  isClicked(prefecture.prefCode)
+                    ? `${buttonStyles.checked}`
+                    : '',
+                )}
+                onClick={() => checkPrefData(prefecture.prefCode)}
+                disabled={buttonDisable}
+              >
+                {allPrefKanji[prefecture.prefCode - 1]}
+              </CheckBox>
             ))}
-          </LineChart>
+          </div>
+
+          {prefectures.length > 0 && selected.length > 0 && (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={graphData}
+                margin={{
+                  top: 10,
+                  right: 40,
+                  left: 40,
+                  bottom: 40,
+                }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {selected.map((data) => (
+                  <Line
+                    key={data.name}
+                    type="monotone"
+                    dataKey={data.name}
+                    stroke={data.color}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </main>
       </div>
     </>
