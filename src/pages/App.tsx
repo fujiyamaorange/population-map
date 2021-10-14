@@ -23,8 +23,8 @@ import getAllPrefs from '../utils/api/getAllPrefs';
 import allPrefKanji from '../constants/allPrefKanji';
 import getRandomHexColor from '../utils/getRandomHexColor';
 import generalStyles from '../style/App.module.css';
-import buttonStyles from '../style/Button.module.css';
 import classNames from '../utils/classNames';
+import buttonStyles from '../style/Button.module.css';
 import CheckBox from '../components/CheckBox';
 import allPrefectures from '../models/recoil/AllPrefectures';
 import populationGraphData from '../models/recoil/GraphData';
@@ -32,7 +32,6 @@ import populationGraphData from '../models/recoil/GraphData';
 function App(): JSX.Element {
   const [prefectures, setPrefectures] =
     useRecoilState<PrefData[]>(allPrefectures);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [populationData, setPopulationData] =
     useRecoilState<Record<Prefecture, any>>(populationGraphData);
   const [selected, setSelected] = React.useState<
@@ -59,9 +58,8 @@ function App(): JSX.Element {
     else temp = graphData;
 
     data.forEach((graph, index) => {
-      const pref = allPrefKanji[graph.pref.prefCode - 1];
       temp[index].year = graph.year;
-      temp[index][pref] = graph.value;
+      temp[index][allPrefKanji[graph.pref.prefCode - 1]] = graph.value;
     });
     setGraphData(temp);
     setSelected([
