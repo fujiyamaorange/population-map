@@ -1,3 +1,5 @@
+/* eslint-disable prefer-destructuring */
+/* eslint-disable operator-linebreak */
 import React from 'react';
 
 import {
@@ -12,8 +14,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+import { useRecoilState } from 'recoil';
+
 import getPrefData from '../utils/api/getPrefData';
-import { PrefData } from '../models/prefecture';
+import { PrefData, Prefecture } from '../models/prefecture';
 import { GraphData } from '../models/GraphData';
 import getAllPrefs from '../utils/api/getAllPrefs';
 import allPrefKanji from '../constants/allPrefKanji';
@@ -22,9 +26,15 @@ import generalStyles from '../style/App.module.css';
 import buttonStyles from '../style/Button.module.css';
 import classNames from '../utils/classNames';
 import CheckBox from '../components/CheckBox';
+import allPrefectures from '../models/recoil/AllPrefectures';
+import populationGraphData from '../models/recoil/GraphData';
 
 function App(): JSX.Element {
-  const [prefectures, setPrefectures] = React.useState<PrefData[]>([]);
+  const [prefectures, setPrefectures] =
+    useRecoilState<PrefData[]>(allPrefectures);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [populationData, setPopulationData] =
+    useRecoilState<Record<Prefecture, any>>(populationGraphData);
   const [selected, setSelected] = React.useState<
     { name: string; color: string }[]
   >([]);
@@ -74,15 +84,24 @@ function App(): JSX.Element {
       return;
     }
 
-    const data = await getPrefData(prefCode);
-    if (data === 'error') {
-      alert('都道府県情報の取得に失敗しました');
-      setButtonDisable(false);
-      return;
+    let population: any = {};
+    if (populationData[allPrefKanji[prefCode - 1]] === null) {
+      const data = await getPrefData(prefCode);
+      if (data === 'error') {
+        alert('都道府県情報の取得に失敗しました');
+        setButtonDisable(false);
+        return;
+      }
+      // 総人口
+      population = data.result.data[0];
+      const newData = { ...populationData };
+      newData[allPrefKanji[prefCode - 1]] = population;
+      setPopulationData(newData);
+    } else {
+      population = populationData[allPrefKanji[prefCode - 1]];
     }
 
     let initial = [];
-    const population = data.result.data[0]; // 総人口
     if (graphData.length === 0) {
       initial = population.data.map(
         (info: { year: number; value: number }) => ({
