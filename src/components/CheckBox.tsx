@@ -9,7 +9,6 @@ type Props = {
   children?: ReactNode;
 } & ComponentPropsWithoutRef<'button'>;
 
-// eslint-disable-next-line arrow-body-style
 const CheckBox: React.VFC<Props> = ({ children, className, ...rest }) => {
   const classes = clsx(className, styles.checkbutton);
   return (
